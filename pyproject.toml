@@ -42,10 +42,16 @@ dependencies = [
   "requests>=2.32.0",
   "cvss>=3.2",
   "caido-sdk-client>=0.2.0",
+  "boto3>=1.28.0",  # Required for AWS Bedrock LLM provider
 ]
 
 [project.scripts]
 strix = "strix.interface.main:main"
+
+[project.optional-dependencies]
+aws = [
+  "boto3>=1.28.0",  # AWS Bedrock support
+]
 
 [dependency-groups]
 dev = [
@@ -105,6 +111,8 @@ module = [
     "docker.*",
     "caido_sdk_client.*",
     "pydantic_settings.*",
+    "boto3.*",
+    "botocore.*",
 ]
 ignore_missing_imports = true
 disable_error_code = ["import-untyped"]

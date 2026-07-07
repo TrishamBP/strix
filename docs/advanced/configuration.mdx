@@ -8,11 +8,27 @@ Configure Strix using environment variables or a config file.
 ## LLM Configuration
 
 <ParamField path="STRIX_LLM" type="string" required>
-  Model name in LiteLLM format (e.g., `openai/gpt-5.4`, `anthropic/claude-sonnet-4-6`).
+  Model name in LiteLLM format (e.g., `openai/gpt-5.4`, `anthropic/claude-sonnet-4-6`, `bedrock/anthropic.claude-sonnet-4-6`).
 </ParamField>
 
 <ParamField path="LLM_API_KEY" type="string">
   API key for your LLM provider. Not required for local models or cloud provider auth (Vertex AI, AWS Bedrock).
+</ParamField>
+
+<ParamField path="AWS_PROFILE" type="string">
+  AWS CLI profile name for Bedrock authentication. Used with AWS SSO or named profiles.
+</ParamField>
+
+<ParamField path="AWS_REGION_NAME" type="string">
+  AWS region where Bedrock models are enabled. Required for AWS Bedrock. Note: Use `AWS_REGION_NAME` (not `AWS_REGION`) for LiteLLM compatibility.
+</ParamField>
+
+<ParamField path="AWS_ACCESS_KEY_ID" type="string">
+  AWS access key ID for Bedrock authentication. Alternative to `AWS_PROFILE`.
+</ParamField>
+
+<ParamField path="AWS_SECRET_ACCESS_KEY" type="string">
+  AWS secret access key for Bedrock authentication. Used with `AWS_ACCESS_KEY_ID`.
 </ParamField>
 
 <ParamField path="LLM_API_BASE" type="string">
@@ -115,16 +131,35 @@ strix --target ./app --config /path/to/config.json
 
 ## Example Setup
 
+### OpenAI
+
 ```bash
-# Required
 export STRIX_LLM="openai/gpt-5.4"
 export LLM_API_KEY="sk-..."
+```
 
-# Optional: Enable web search
+### Anthropic Direct
+
+```bash
+export STRIX_LLM="anthropic/claude-sonnet-4-6"
+export LLM_API_KEY="sk-ant-..."
+```
+
+### AWS Bedrock
+
+```bash
+export STRIX_LLM="bedrock/anthropic.claude-sonnet-4-6"
+export AWS_PROFILE="your-sso-profile"
+export AWS_REGION_NAME="us-east-1"
+```
+
+### Optional Features
+
+```bash
+# Enable web search
 export PERPLEXITY_API_KEY="pplx-..."
 
-# Optional: Custom timeouts
+# Custom timeouts
 export LLM_TIMEOUT="600"
 export STRIX_SANDBOX_EXECUTION_TIMEOUT="300"
-
 ```

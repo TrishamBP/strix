@@ -6,29 +6,47 @@ description: "Configure Strix with models via AWS Bedrock"
 ## Setup
 
 ```bash
-export STRIX_LLM="bedrock/anthropic.claude-4-5-sonnet-20251022-v1:0"
+export STRIX_LLM="bedrock/anthropic.claude-sonnet-4-6"
+export AWS_REGION_NAME="us-east-1"  # Region where Bedrock is enabled
 ```
 
 No API key required—uses AWS credentials from environment.
 
+**Note:** Strix includes `boto3` as a dependency. If you installed via the binary installer and encounter issues, consider installing from source: `uv tool install git+https://github.com/usestrix/strix.git`
+
 ## Authentication
 
-### Option 1: AWS CLI Profile
+### Option 1: AWS SSO Profile (Recommended for Developers)
+
+```bash
+export AWS_PROFILE="your-sso-profile"
+export AWS_REGION_NAME="us-east-1"
+
+# Ensure SSO session is active
+aws sso login --profile your-sso-profile
+
+# Verify credentials
+aws sts get-caller-identity --profile your-sso-profile
+```
+
+**Important:** Use `AWS_REGION_NAME` (not `AWS_REGION` or `AWS_DEFAULT_REGION`) for LiteLLM compatibility.
+
+### Option 2: AWS CLI Profile
 
 ```bash
 export AWS_PROFILE="your-profile"
-export AWS_REGION="us-east-1"
+export AWS_REGION_NAME="us-east-1"
 ```
 
-### Option 2: Access Keys
+### Option 3: Access Keys
 
 ```bash
 export AWS_ACCESS_KEY_ID="AKIA..."
 export AWS_SECRET_ACCESS_KEY="..."
-export AWS_REGION="us-east-1"
+export AWS_REGION_NAME="us-east-1"
 ```
 
-### Option 3: IAM Role (EC2/ECS)
+### Option 4: IAM Role (EC2/ECS)
 
 Automatically uses instance role credentials.
 
@@ -36,12 +54,77 @@ Automatically uses instance role credentials.
 
 | Model | Description |
 |-------|-------------|
-| `bedrock/anthropic.claude-4-5-sonnet-20251022-v1:0` | Claude 4.5 Sonnet |
-| `bedrock/anthropic.claude-4-5-opus-20251022-v1:0` | Claude 4.5 Opus |
-| `bedrock/anthropic.claude-4-5-haiku-20251022-v1:0` | Claude 4.5 Haiku |
+| `bedrock/anthropic.claude-sonnet-4-6` | Claude 4.6 Sonnet (recommended) |
+| `bedrock/anthropic.claude-opus-4-6` | Claude 4.6 Opus |
+| `bedrock/anthropic.claude-4-5-sonnet-20251022-v1:0` | Claude 4.5 Sonnet (versioned) |
+| `bedrock/anthropic.claude-4-5-opus-20251022-v1:0` | Claude 4.5 Opus (versioned) |
+| `bedrock/anthropic.claude-4-5-haiku-20251022-v1:0` | Claude 4.5 Haiku (versioned) |
 | `bedrock/amazon.titan-text-premier-v2:0` | Amazon Titan Premier v2 |
+
+**Note:** Use the simplified model IDs (e.g., `claude-sonnet-4-6`) rather than cross-region inference IDs (e.g., `eu.anthropic.claude-sonnet-4-6-v1`).
 
 ## Prerequisites
 
 1. Enable model access in the AWS Bedrock console
 2. Ensure your IAM role/user has `bedrock:InvokeModel` permission
+3. `boto3` package (included as dependency in Strix 1.0.5+)
+
+## Complete Working Example
+
+```bash
+# Set environment variables
+export AWS_PROFILE="your-sso-profile"
+export AWS_REGION_NAME="eu-west-2"
+export STRIX_LLM="bedrock/anthropic.claude-sonnet-4-6"
+
+# Ensure SSO session is active
+aws sso login --profile $AWS_PROFILE
+
+# Run scan
+strix -n -t https://example.com --scan-mode quick
+```
+
+### For Large Repositories (> 1GB)
+
+```bash
+# Use --mount to bind-mount instead of copying
+strix -n -t ./ --mount ./ --scan-mode standard
+```
+
+### List Available Models
+
+```bash
+aws bedrock list-foundation-models \
+  --region eu-west-2 \
+  --query "modelSummaries[?contains(modelId,'claude')].modelId" \
+  --output table
+```
+
+## Troubleshooting
+
+### Missing boto3
+
+If you see `ModuleNotFoundError: No module named 'boto3'`:
+
+```bash
+# For uv tool install
+uv pip install boto3 --python ~/.local/share/uv/tools/strix-agent/bin/python3
+
+# Or reinstall from source
+uv tool uninstall strix-agent
+uv tool install git+https://github.com/usestrix/strix.git
+```
+
+### SSO Session Expired
+
+```bash
+aws sso login --profile your-profile
+```
+
+### Wrong Region
+
+Ensure the region matches where you enabled Bedrock models:
+
+```bash
+export AWS_REGION_NAME="us-east-1"  # Not AWS_REGION or AWS_DEFAULT_REGION
+```
